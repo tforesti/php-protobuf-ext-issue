@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+package prototest;
+
+import public "CommonOne.proto";

@@ -1,0 +1,30 @@
+FROM php
+
+WORKDIR /app
+
+# Setup
+
+RUN mv /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini
+
+RUN apt update
+RUN apt install -y protobuf-compiler
+RUN apt install -y python3
+RUN apt install -y libzip-dev
+
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/bin/
+RUN install-php-extensions zip
+RUN install-php-extensions grpc
+RUN install-php-extensions protobuf
+
+COPY --from=composer /usr/bin/composer /usr/bin/
+
+COPY . /app
+
+# PHP protbuf class generation
+RUN protoc --proto_path=src --php_out=build $(find src -name '*.proto')
+# composer.json and autoload generation
+RUN python3 package.py
+RUN composer install
+RUN composer check-platform-reqs
+
+ENTRYPOINT php index.php
